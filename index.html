@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Cobra Trading → Skatteverket SRU (K4)</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161a23;
+    --panel-2: #1d2230;
+    --border: #2a2f3d;
+    --text: #e6e9ef;
+    --muted: #8b93a7;
+    --accent: #6ea8ff;
+    --accent-2: #4dd4a4;
+    --warn: #ffb454;
+    --bad: #ff6b6b;
+    --good: #4dd4a4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 24px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 32px 64px; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; }
+  section h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input[type="text"], input[type="number"], input[type="file"], select {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: 6px; font-size: 14px; width: 100%;
+  }
+  input[type="file"] { padding: 6px; }
+  button { background: var(--accent); color: #0a0d14; border: 0; padding: 10px 18px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #8ab8ff; }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button.secondary:hover { background: #262c3d; }
+  .grid { display: grid; gap: 14px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .row > * { flex: 1; min-width: 160px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .stat .value.good { color: var(--good); }
+  .stat .value.bad { color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; font-size: 11px; }
+  tbody tr:hover { background: var(--panel-2); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.gain { color: var(--good); }
+  td.loss { color: var(--bad); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+  .pill.long { background: rgba(77, 212, 164, 0.1); color: var(--good); border-color: rgba(77, 212, 164, 0.3); }
+  .pill.short { background: rgba(255, 107, 107, 0.1); color: var(--bad); border-color: rgba(255, 107, 107, 0.3); }
+  .hidden { display: none; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .canvas-wrap { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 320px; position: relative; }
+  .table-wrap { max-height: 480px; overflow: auto; border-radius: 6px; border: 1px solid var(--border); }
+  .alert { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-top: 10px; }
+  .alert.warn { background: rgba(255, 180, 84, 0.1); border: 1px solid rgba(255, 180, 84, 0.3); color: var(--warn); }
+  .alert.info { background: rgba(110, 168, 255, 0.1); border: 1px solid rgba(110, 168, 255, 0.3); color: var(--accent); }
+  details { margin-top: 10px; }
+  details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+  details pre { background: var(--bg); padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; max-height: 280px; }
+  .step-num { display: inline-block; background: var(--accent); color: #0a0d14; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: 700; margin-right: 8px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Cobra Trading → Skatteverket SRU (K4)</h1>
+    <div class="sub">Local browser tool. No data leaves this page.</div>
+  </div>
+  <div class="sub">Income year <strong id="hdrYear">2024</strong></div>
+</header>
+
+<main>
+  <section>
+    <h2><span class="step-num">1</span>Upload Cobra Trading activity report</h2>
+    <div class="row">
+      <div>
+        <label for="file">CSV file (executions / trade history)</label>
+        <input type="file" id="file" accept=".csv,.txt" />
+      </div>
+      <div style="flex: 0 1 auto;">
+        <button class="secondary" id="demoBtn">Load demo data</button>
+      </div>
+    </div>
+    <div class="alert info">
+      Most Cobra / DAS Trader exports use columns like <code>Symbol, B/S, Qty, Price, Date, Time, Commission</code>. Column names are auto-detected. If the mapping below is wrong, fix it manually.
+    </div>
+    <details id="rawDetails" class="hidden">
+      <summary>Show raw parsed rows</summary>
+      <pre id="rawPreview"></pre>
+    </details>
+  </section>
+
+  <section id="mapSection" class="hidden">
+    <h2><span class="step-num">2</span>Column mapping</h2>
+    <div class="grid cols-4" id="mapGrid"></div>
+    <div class="alert warn" id="mapWarn"></div>
+  </section>
+
+  <section id="fxSection" class="hidden">
+    <h2><span class="step-num">3</span>USD → SEK conversion</h2>
+    <div class="row">
+      <div>
+        <label for="fxMode">Conversion mode</label>
+        <select id="fxMode">
+          <option value="fixed">Fixed annual rate</option>
+          <option value="csv">Per-date rates from CSV (date,rate)</option>
+        </select>
+      </div>
+      <div id="fxFixedWrap">
+        <label for="fxRate">USD/SEK rate</label>
+        <input type="number" id="fxRate" step="0.0001" value="10.5800" />
+      </div>
+      <div id="fxCsvWrap" class="hidden">
+        <label for="fxCsv">Rates CSV (YYYY-MM-DD,rate per line)</label>
+        <input type="file" id="fxCsv" accept=".csv,.txt" />
+      </div>
+    </div>
+    <div class="alert info">
+      Skatteverket accepts a reasonable conversion — either Riksbanken's daily rate on each trade date, or the annual average. For active day-trading the annual average is usually fine; for occasional swings, per-date is more accurate.
+    </div>
+  </section>
+
+  <section id="taxpayerSection" class="hidden">
+    <h2><span class="step-num">4</span>Taxpayer info</h2>
+    <div class="grid cols-3">
+      <div>
+        <label for="persnr">Personnummer (YYYYMMDDXXXX)</label>
+        <input type="text" id="persnr" placeholder="198001011234" />
+      </div>
+      <div>
+        <label for="name">Name</label>
+        <input type="text" id="name" placeholder="Förnamn Efternamn" />
+      </div>
+      <div>
+        <label for="taxYear">Income year</label>
+        <select id="taxYear">
+          <option>2022</option>
+          <option>2023</option>
+          <option selected>2024</option>
+          <option>2025</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid cols-3" style="margin-top: 12px;">
+      <div>
+        <label for="aggMode">Aggregation</label>
+        <select id="aggMode">
+          <option value="symbol" selected>One row per symbol (recommended)</option>
+          <option value="trade">One row per closed trade</option>
+        </select>
+      </div>
+      <div>
+        <label for="includeFees">Treat commissions/fees as</label>
+        <select id="includeFees">
+          <option value="cost" selected>Add to cost basis / reduce proceeds</option>
+          <option value="ignore">Ignore</option>
+        </select>
+      </div>
+      <div>
+        <label for="roundMode">Rounding</label>
+        <select id="roundMode">
+          <option value="round" selected>Round to nearest SEK</option>
+          <option value="floor">Floor to SEK</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section id="resultsSection" class="hidden">
+    <h2><span class="step-num">5</span>Computed results</h2>
+    <div class="grid cols-4" id="statGrid"></div>
+    <h3 style="font-size: 14px; color: var(--muted); margin: 20px 0 8px;">Closed trades</h3>
+    <div class="table-wrap">
+      <table id="tradesTable">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th class="num">Qty</th>
+            <th>Open</th>
+            <th>Close</th>
+            <th class="num">Proceeds (USD)</th>
+            <th class="num">Cost (USD)</th>
+            <th class="num">Gain (USD)</th>
+            <th class="num">Gain (SEK)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <h3 style="font-size: 14px; color: var(--muted); margin: 20px 0 8px;">K4 rows (as they will appear in SRU)</h3>
+    <div class="table-wrap">
+      <table id="k4Table">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th class="num">Antal</th>
+            <th>Beteckning</th>
+            <th class="num">Försäljningspris (SEK)</th>
+            <th class="num">Omkostnadsbelopp (SEK)</th>
+            <th class="num">Vinst (SEK)</th>
+            <th class="num">Förlust (SEK)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="chartsSection" class="hidden">
+    <h2><span class="step-num">6</span>Trading graphs</h2>
+    <div class="grid cols-2">
+      <div class="canvas-wrap"><canvas id="pnlChart"></canvas></div>
+      <div class="canvas-wrap"><canvas id="monthlyChart"></canvas></div>
+      <div class="canvas-wrap"><canvas id="symbolChart"></canvas></div>
+      <div class="canvas-wrap"><canvas id="winLossChart"></canvas></div>
+    </div>
+  </section>
+
+  <section id="exportSection" class="hidden">
+    <h2><span class="step-num">7</span>Download SRU files</h2>
+    <div class="muted">Both files are needed by Skatteverket's e-service. Upload them together at <code>skatteverket.se/sru</code>.</div>
+    <div class="actions">
+      <button id="dlInfo">Download INFO.SRU</button>
+      <button id="dlBlank">Download BLANKETTER.SRU</button>
+      <button class="secondary" id="dlBoth">Download both (zip-free, sequential)</button>
+    </div>
+    <details>
+      <summary>Preview BLANKETTER.SRU</summary>
+      <pre id="blankPreview"></pre>
+    </details>
+    <details>
+      <summary>Preview INFO.SRU</summary>
+      <pre id="infoPreview"></pre>
+    </details>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script>
+'use strict';
+
+// ============================================================
+// State
+// ============================================================
+const state = {
+  rawRows: [],
+  headers: [],
+  mapping: {},
+  trades: [],
+  closed: [],
+  k4rows: [],
+  fxRates: null, // map "YYYY-MM-DD" -> rate
+  charts: {},
+};
+
+// ============================================================
+// CSV parsing
+// ============================================================
+function parseCSV(text) {
+  // RFC-4180-ish: handle quoted fields, embedded commas, CRLF
+  const rows = [];
+  let row = [], field = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i+1];
+    if (inQuote) {
+      if (c === '"' && n === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuote = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') inQuote = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim()));
+}
+
+function rowsToObjects(rows) {
+  if (rows.length < 2) return { headers: [], objects: [] };
+  const headers = rows[0].map(h => h.trim());
+  const objects = rows.slice(1).map(r => {
+    const o = {};
+    headers.forEach((h, i) => o[h] = (r[i] ?? '').trim());
+    return o;
+  });
+  return { headers, objects };
+}
+
+// ============================================================
+// Column auto-detection
+// ============================================================
+const FIELD_HINTS = {
+  symbol:   [/^symbol$/i, /^ticker$/i, /^sym$/i, /^security$/i],
+  side:     [/^side$/i, /^b\/s$/i, /^buy.?sell$/i, /^action$/i, /^type$/i],
+  qty:      [/^qty$/i, /^quantity$/i, /^shares$/i, /^size$/i, /^amount$/i],
+  price:    [/^price$/i, /^px$/i, /^avg.?price$/i, /^exec.?price$/i, /^trade.?price$/i],
+  date:     [/^date$/i, /^trade.?date$/i, /^exec.?date$/i],
+  time:     [/^time$/i, /^trade.?time$/i, /^exec.?time$/i, /^timestamp$/i],
+  datetime: [/^datetime$/i, /^date.?time$/i, /^timestamp$/i],
+  commission:[/^commission$/i, /^comm$/i, /^fees?$/i, /^total.?fees$/i],
+};
+
+function autoDetect(headers) {
+  const map = {};
+  for (const field in FIELD_HINTS) {
+    for (const h of headers) {
+      if (FIELD_HINTS[field].some(rx => rx.test(h))) { map[field] = h; break; }
+    }
+  }
+  return map;
+}
+
+// ============================================================
+// Trade normalization
+// ============================================================
+function parseDateTime(dateStr, timeStr) {
+  if (!dateStr) return null;
+  let d = dateStr.trim();
+  let t = (timeStr || '').trim();
+  // Try YYYY-MM-DD or MM/DD/YYYY
+  let iso;
+  if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+    iso = d.substring(0, 10);
+  } else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(d)) {
+    const [m, day, y] = d.split(/[/ ]/);
+    const fullY = y.length === 2 ? '20' + y : y;
+    iso = `${fullY}-${m.padStart(2,'0')}-${day.padStart(2,'0')}`;
+  } else if (/^\d{8}$/.test(d)) {
+    iso = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+  } else {
+    const parsed = new Date(d);
+    if (isNaN(parsed)) return null;
+    iso = parsed.toISOString().substring(0, 10);
+  }
+  let dt;
+  if (t) {
+    // Strip am/pm if present, normalize
+    t = t.replace(/\s+(AM|PM)$/i, (m, p) => { return p.toUpperCase() === 'PM' ? 'PM' : 'AM'; });
+    dt = new Date(`${iso}T${t.match(/(\d{1,2}):(\d{2})(:\d{2})?/) ? t.replace(/\s/g,'') : '00:00:00'}`);
+    if (isNaN(dt)) dt = new Date(`${iso}T00:00:00`);
+  } else {
+    dt = new Date(`${iso}T00:00:00`);
+  }
+  return { iso, dt };
+}
+
+function normalizeSide(s) {
+  if (!s) return null;
+  const u = s.trim().toUpperCase();
+  if (u === 'B' || u === 'BUY' || u === 'BOT' || u === 'BOUGHT' || u === 'LONG') return 'B';
+  if (u === 'S' || u === 'SELL' || u === 'SLD' || u === 'SOLD' || u === 'SHORT' || u === 'SS' || u === 'SHRT') return 'S';
+  return null;
+}
+
+function parseNumber(v) {
+  if (v == null) return 0;
+  const cleaned = String(v).replace(/[$,\s]/g, '').replace(/[()]/g, m => m === '(' ? '-' : '');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function normalizeTrades(objects, mapping) {
+  const out = [];
+  for (const o of objects) {
+    const sym = (o[mapping.symbol] || '').toUpperCase().trim();
+    const side = normalizeSide(o[mapping.side]);
+    let qty = parseNumber(o[mapping.qty]);
+    const price = parseNumber(o[mapping.price]);
+    const comm = mapping.commission ? Math.abs(parseNumber(o[mapping.commission])) : 0;
+    const dt = parseDateTime(o[mapping.date], o[mapping.time]);
+    if (!sym || !side || !qty || !price || !dt) continue;
+    qty = Math.abs(qty);
+    out.push({ symbol: sym, side, qty, price, fees: comm, date: dt.iso, datetime: dt.dt.getTime() });
+  }
+  out.sort((a, b) => a.datetime - b.datetime);
+  return out;
+}
+
+// ============================================================
+// FIFO matching (handles long and short positions)
+// ============================================================
+function matchFIFO(trades) {
+  const bySym = {};
+  trades.forEach(t => { (bySym[t.symbol] = bySym[t.symbol] || []).push(t); });
+  const closed = [];
+  for (const sym in bySym) {
+    const arr = bySym[sym];
+    const openings = []; // each: {qty, price, feesPerShare, date, datetime, side}
+    for (const t of arr) {
+      let remaining = t.qty;
+      const tFeesPerShare = t.qty > 0 ? t.fees / t.qty : 0;
+      while (remaining > 0 && openings.length > 0 && openings[0].side !== t.side) {
+        const op = openings[0];
+        const closeQty = Math.min(remaining, op.qty);
+        const opFeesPerShare = op.feesPerShare;
+
+        let proceeds, cost, isShort = (op.side === 'S');
+        if (!isShort) {
+          cost     = closeQty * op.price + closeQty * opFeesPerShare;
+          proceeds = closeQty * t.price  - closeQty * tFeesPerShare;
+        } else {
+          proceeds = closeQty * op.price - closeQty * opFeesPerShare;
+          cost     = closeQty * t.price  + closeQty * tFeesPerShare;
+        }
+
+        closed.push({
+          symbol: sym, qty: closeQty,
+          openDate: op.date, closeDate: t.date,
+          openDatetime: op.datetime, closeDatetime: t.datetime,
+          openPrice: op.price, closePrice: t.price,
+          proceeds, cost, gain: proceeds - cost,
+          isShort,
+        });
+
+        op.qty -= closeQty;
+        remaining -= closeQty;
+        if (op.qty <= 1e-9) openings.shift();
+      }
+      if (remaining > 0) {
+        openings.push({
+          qty: remaining,
+          price: t.price,
+          feesPerShare: tFeesPerShare,
+          date: t.date, datetime: t.datetime,
+          side: t.side,
+        });
+      }
+    }
+  }
+  closed.sort((a, b) => a.closeDatetime - b.closeDatetime);
+  return closed;
+}
+
+// ============================================================
+// FX
+// ============================================================
+function fxFor(isoDate) {
+  if (state.fxRates) {
+    if (state.fxRates[isoDate]) return state.fxRates[isoDate];
+    // nearest earlier date
+    const keys = Object.keys(state.fxRates).sort();
+    let best = null;
+    for (const k of keys) { if (k <= isoDate) best = k; else break; }
+    if (best) return state.fxRates[best];
+    if (keys.length) return state.fxRates[keys[0]];
+  }
+  return parseFloat(document.getElementById('fxRate').value) || 1;
+}
+
+function roundFn() {
+  return document.getElementById('roundMode').value === 'floor' ? Math.floor : Math.round;
+}
+
+// ============================================================
+// K4 row building
+// ============================================================
+function buildK4Rows(closed, aggMode) {
+  const rnd = roundFn();
+  const rows = [];
+  if (aggMode === 'symbol') {
+    const bySym = {};
+    for (const c of closed) {
+      const k = c.symbol;
+      const fxOpen = fxFor(c.openDate);
+      const fxClose = fxFor(c.closeDate);
+      if (!bySym[k]) bySym[k] = { qty: 0, proceedsSEK: 0, costSEK: 0 };
+      bySym[k].qty += c.qty;
+      bySym[k].proceedsSEK += c.proceeds * fxClose;
+      bySym[k].costSEK += c.cost * fxOpen;
+    }
+    for (const sym in bySym) {
+      const a = bySym[sym];
+      const fors = rnd(a.proceedsSEK);
+      const omk  = rnd(a.costSEK);
+      const diff = fors - omk;
+      rows.push({
+        antal: Math.round(a.qty),
+        beteckning: sym,
+        forsaljning: fors,
+        omkostnad: omk,
+        vinst: diff > 0 ? diff : 0,
+        forlust: diff < 0 ? -diff : 0,
+      });
+    }
+  } else {
+    for (const c of closed) {
+      const fxOpen = fxFor(c.openDate);
+      const fxClose = fxFor(c.closeDate);
+      const fors = rnd(c.proceeds * fxClose);
+      const omk  = rnd(c.cost * fxOpen);
+      const diff = fors - omk;
+      rows.push({
+        antal: Math.round(c.qty),
+        beteckning: c.symbol,
+        forsaljning: fors,
+        omkostnad: omk,
+        vinst: diff > 0 ? diff : 0,
+        forlust: diff < 0 ? -diff : 0,
+      });
+    }
+  }
+  return rows;
+}
+
+// ============================================================
+// SRU generation
+// ============================================================
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function buildBlanketter(k4rows, personnummer, name, year) {
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())} ${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+  const blockSize = 9;
+  let out = '';
+  let blanketteNr = 0;
+  for (let i = 0; i < k4rows.length; i += blockSize) {
+    blanketteNr++;
+    const block = k4rows.slice(i, i + blockSize);
+    out += `#BLANKETT K4-${year}P4\r\n`;
+    out += `#IDENTITET ${personnummer} ${stamp}\r\n`;
+    out += `#NAMN ${name}\r\n`;
+    let sumF = 0, sumO = 0, sumV = 0, sumL = 0;
+    block.forEach((r, idx) => {
+      const base = 3100 + idx * 10;
+      out += `#UPPGIFT ${base + 0} ${r.antal}\r\n`;
+      out += `#UPPGIFT ${base + 1} ${r.beteckning}\r\n`;
+      out += `#UPPGIFT ${base + 2} ${r.forsaljning}\r\n`;
+      out += `#UPPGIFT ${base + 3} ${r.omkostnad}\r\n`;
+      if (r.vinst > 0)  out += `#UPPGIFT ${base + 4} ${r.vinst}\r\n`;
+      if (r.forlust > 0) out += `#UPPGIFT ${base + 5} ${r.forlust}\r\n`;
+      sumF += r.forsaljning; sumO += r.omkostnad; sumV += r.vinst; sumL += r.forlust;
+    });
+    out += `#UPPGIFT 3300 ${sumF}\r\n`;
+    out += `#UPPGIFT 3301 ${sumO}\r\n`;
+    if (sumV > 0) out += `#UPPGIFT 3304 ${sumV}\r\n`;
+    if (sumL > 0) out += `#UPPGIFT 3305 ${sumL}\r\n`;
+    out += `#UPPGIFT 7014 ${blanketteNr}\r\n`;
+    out += `#BLANKETTSLUT\r\n`;
+  }
+  out += `#FIL_SLUT\r\n`;
+  return out;
+}
+
+function buildInfo(personnummer, name) {
+  return [
+    '#DATABESKRIVNING_START',
+    '#PRODUKT SRU',
+    '#FILNAMN BLANKETTER.SRU',
+    '#DATABESKRIVNING_SLUT',
+    '#MEDIELEV_START',
+    `#ORGNR ${personnummer}`,
+    `#NAMN ${name}`,
+    '#ADRESS',
+    '#POSTNR',
+    '#POSTORT',
+    '#EMAIL',
+    '#MEDIELEV_SLUT',
+    '',
+  ].join('\r\n');
+}
+
+function toLatin1Bytes(str) {
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    bytes[i] = c > 0xFF ? 0x3F : c;
+  }
+  return bytes;
+}
+
+function downloadFile(filename, content) {
+  const bytes = toLatin1Bytes(content);
+  const blob = new Blob([bytes], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ============================================================
+// Render
+// ============================================================
+function fmt(n, dec = 2) {
+  if (!isFinite(n)) return '-';
+  return n.toLocaleString('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function renderMapping() {
+  const grid = document.getElementById('mapGrid');
+  grid.innerHTML = '';
+  const required = ['symbol', 'side', 'qty', 'price', 'date'];
+  const optional = ['time', 'commission'];
+  const all = [...required, ...optional];
+  for (const f of all) {
+    const div = document.createElement('div');
+    const isReq = required.includes(f);
+    div.innerHTML = `
+      <label>${f}${isReq ? ' *' : ''}</label>
+      <select data-field="${f}">
+        <option value="">— none —</option>
+        ${state.headers.map(h => `<option value="${h}" ${state.mapping[f] === h ? 'selected' : ''}>${h}</option>`).join('')}
+      </select>
+    `;
+    grid.appendChild(div);
+  }
+  grid.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', e => {
+      state.mapping[e.target.dataset.field] = e.target.value || null;
+      recompute();
+    });
+  });
+  const warn = document.getElementById('mapWarn');
+  const missing = required.filter(r => !state.mapping[r]);
+  if (missing.length) {
+    warn.textContent = `Missing required column(s): ${missing.join(', ')}`;
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
+}
+
+function renderResults() {
+  const tbody = document.querySelector('#tradesTable tbody');
+  tbody.innerHTML = '';
+  for (const c of state.closed) {
+    const fxOpen = fxFor(c.openDate), fxClose = fxFor(c.closeDate);
+    const gainSEK = c.proceeds * fxClose - c.cost * fxOpen;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td><strong>${c.symbol}</strong></td>
+        <td><span class="pill ${c.isShort ? 'short' : 'long'}">${c.isShort ? 'SHORT' : 'LONG'}</span></td>
+        <td class="num">${c.qty}</td>
+        <td>${c.openDate}</td>
+        <td>${c.closeDate}</td>
+        <td class="num">${fmt(c.proceeds)}</td>
+        <td class="num">${fmt(c.cost)}</td>
+        <td class="num ${c.gain >= 0 ? 'gain' : 'loss'}">${fmt(c.gain)}</td>
+        <td class="num ${gainSEK >= 0 ? 'gain' : 'loss'}">${fmt(gainSEK, 0)}</td>
+      </tr>
+    `);
+  }
+
+  const k4body = document.querySelector('#k4Table tbody');
+  k4body.innerHTML = '';
+  state.k4rows.forEach((r, i) => {
+    k4body.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td class="num">${i + 1}</td>
+        <td class="num">${r.antal}</td>
+        <td><strong>${r.beteckning}</strong></td>
+        <td class="num">${fmt(r.forsaljning, 0)}</td>
+        <td class="num">${fmt(r.omkostnad, 0)}</td>
+        <td class="num gain">${r.vinst ? fmt(r.vinst, 0) : ''}</td>
+        <td class="num loss">${r.forlust ? fmt(r.forlust, 0) : ''}</td>
+      </tr>
+    `);
+  });
+
+  // Stats
+  const stats = document.getElementById('statGrid');
+  const totalGainUSD = state.closed.reduce((s, c) => s + c.gain, 0);
+  const wins = state.closed.filter(c => c.gain > 0).length;
+  const losses = state.closed.filter(c => c.gain < 0).length;
+  const totalSEK = state.k4rows.reduce((s, r) => s + r.vinst - r.forlust, 0);
+  const totalForsaljning = state.k4rows.reduce((s, r) => s + r.forsaljning, 0);
+  stats.innerHTML = `
+    <div class="stat"><div class="label">Closed trades</div><div class="value">${state.closed.length}</div></div>
+    <div class="stat"><div class="label">Win / Loss</div><div class="value">${wins} / ${losses}</div></div>
+    <div class="stat"><div class="label">Net P&L (USD)</div><div class="value ${totalGainUSD >= 0 ? 'good' : 'bad'}">${fmt(totalGainUSD)}</div></div>
+    <div class="stat"><div class="label">Net P&L (SEK)</div><div class="value ${totalSEK >= 0 ? 'good' : 'bad'}">${fmt(totalSEK, 0)}</div></div>
+  `;
+
+  // Previews
+  const persnr = document.getElementById('persnr').value || '000000000000';
+  const name   = document.getElementById('name').value || 'Förnamn Efternamn';
+  const year   = document.getElementById('taxYear').value;
+  document.getElementById('blankPreview').textContent = buildBlanketter(state.k4rows, persnr, name, year);
+  document.getElementById('infoPreview').textContent  = buildInfo(persnr, name);
+}
+
+// ============================================================
+// Charts
+// ============================================================
+function destroyCharts() {
+  for (const k in state.charts) { state.charts[k]?.destroy(); }
+  state.charts = {};
+}
+
+function renderCharts() {
+  destroyCharts();
+  const closed = [...state.closed].sort((a,b) => a.closeDatetime - b.closeDatetime);
+
+  // Cumulative P&L
+  let running = 0;
+  const cumLabels = closed.map(c => c.closeDate);
+  const cumData = closed.map(c => { running += c.gain; return running; });
+  state.charts.pnl = new Chart(document.getElementById('pnlChart'), {
+    type: 'line',
+    data: { labels: cumLabels, datasets: [{ label: 'Cumulative P&L (USD)', data: cumData, borderColor: '#6ea8ff', backgroundColor: 'rgba(110,168,255,0.15)', fill: true, tension: 0.2, pointRadius: 0 }] },
+    options: chartOpts('Cumulative P&L (USD)'),
+  });
+
+  // Monthly P&L
+  const monthly = {};
+  for (const c of closed) {
+    const k = c.closeDate.substring(0, 7);
+    monthly[k] = (monthly[k] || 0) + c.gain;
+  }
+  const monthKeys = Object.keys(monthly).sort();
+  state.charts.monthly = new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: { labels: monthKeys, datasets: [{ label: 'Monthly P&L (USD)', data: monthKeys.map(k => monthly[k]), backgroundColor: monthKeys.map(k => monthly[k] >= 0 ? '#4dd4a4' : '#ff6b6b') }] },
+    options: chartOpts('Monthly P&L (USD)'),
+  });
+
+  // Top symbols by P&L
+  const bySym = {};
+  for (const c of closed) bySym[c.symbol] = (bySym[c.symbol] || 0) + c.gain;
+  const sortedSyms = Object.entries(bySym).sort((a,b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 15);
+  state.charts.symbol = new Chart(document.getElementById('symbolChart'), {
+    type: 'bar',
+    data: { labels: sortedSyms.map(s => s[0]), datasets: [{ label: 'P&L by symbol (USD)', data: sortedSyms.map(s => s[1]), backgroundColor: sortedSyms.map(s => s[1] >= 0 ? '#4dd4a4' : '#ff6b6b') }] },
+    options: chartOpts('Top symbols by P&L (USD)'),
+  });
+
+  // Win/Loss pie
+  const wins = closed.filter(c => c.gain > 0).length;
+  const losses = closed.filter(c => c.gain < 0).length;
+  const flat = closed.filter(c => c.gain === 0).length;
+  state.charts.winLoss = new Chart(document.getElementById('winLossChart'), {
+    type: 'doughnut',
+    data: { labels: ['Wins', 'Losses', 'Flat'], datasets: [{ data: [wins, losses, flat], backgroundColor: ['#4dd4a4', '#ff6b6b', '#8b93a7'] }] },
+    options: chartOpts('Win / Loss distribution', false),
+  });
+}
+
+function chartOpts(title, hasAxes = true) {
+  const base = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#e6e9ef' } },
+      title: { display: true, text: title, color: '#e6e9ef', font: { size: 14 } },
+    },
+  };
+  if (hasAxes) base.scales = {
+    x: { ticks: { color: '#8b93a7' }, grid: { color: '#2a2f3d' } },
+    y: { ticks: { color: '#8b93a7' }, grid: { color: '#2a2f3d' } },
+  };
+  return base;
+}
+
+// ============================================================
+// Pipeline
+// ============================================================
+function recompute() {
+  const required = ['symbol', 'side', 'qty', 'price', 'date'];
+  if (required.some(r => !state.mapping[r])) return;
+  state.trades = normalizeTrades(state.rawRows, state.mapping);
+  state.closed = matchFIFO(state.trades);
+  state.k4rows = buildK4Rows(state.closed, document.getElementById('aggMode').value);
+  document.getElementById('resultsSection').classList.remove('hidden');
+  document.getElementById('chartsSection').classList.remove('hidden');
+  document.getElementById('exportSection').classList.remove('hidden');
+  renderResults();
+  renderCharts();
+}
+
+function ingestCSV(text) {
+  const rows = parseCSV(text);
+  const { headers, objects } = rowsToObjects(rows);
+  state.headers = headers;
+  state.rawRows = objects;
+  state.mapping = autoDetect(headers);
+  document.getElementById('mapSection').classList.remove('hidden');
+  document.getElementById('fxSection').classList.remove('hidden');
+  document.getElementById('taxpayerSection').classList.remove('hidden');
+  document.getElementById('rawDetails').classList.remove('hidden');
+  document.getElementById('rawPreview').textContent =
+    headers.join(' | ') + '\n' + '-'.repeat(60) + '\n' +
+    objects.slice(0, 8).map(o => headers.map(h => o[h]).join(' | ')).join('\n') +
+    (objects.length > 8 ? `\n... (${objects.length - 8} more rows)` : '');
+  renderMapping();
+  recompute();
+}
+
+// ============================================================
+// Demo data
+// ============================================================
+function demoCSV() {
+  const lines = [
+    'Symbol,B/S,Qty,Price,Date,Time,Commission',
+    'AAPL,B,100,178.50,2024-01-15,09:35:12,1.00',
+    'AAPL,S,100,182.30,2024-01-15,14:22:01,1.00',
+    'TSLA,B,50,238.00,2024-02-02,10:11:00,1.00',
+    'TSLA,S,50,229.50,2024-02-02,15:45:23,1.00',
+    'NVDA,B,30,780.10,2024-03-08,09:31:05,1.00',
+    'NVDA,S,30,812.40,2024-03-11,11:02:14,1.00',
+    'SPY,S,200,512.20,2024-04-04,09:40:00,1.50',
+    'SPY,B,200,508.90,2024-04-04,14:55:01,1.50',
+    'AMD,B,150,182.00,2024-05-20,09:32:00,1.20',
+    'AMD,S,150,175.20,2024-05-20,15:30:00,1.20',
+    'META,B,40,485.00,2024-06-12,10:00:00,1.00',
+    'META,S,40,498.50,2024-06-14,14:00:00,1.00',
+    'PLTR,B,500,24.10,2024-07-08,09:35:00,1.50',
+    'PLTR,S,500,26.40,2024-07-09,10:11:00,1.50',
+    'COIN,B,80,235.00,2024-08-15,11:00:00,1.10',
+    'COIN,S,80,221.50,2024-08-15,15:45:00,1.10',
+    'MSTR,B,20,1450.00,2024-09-09,09:31:00,1.00',
+    'MSTR,S,20,1602.00,2024-09-12,14:15:00,1.00',
+    'SMCI,S,60,820.00,2024-10-04,09:40:00,1.30',
+    'SMCI,B,60,775.00,2024-10-04,15:50:00,1.30',
+    'AAPL,B,200,225.10,2024-11-20,09:33:00,1.50',
+    'AAPL,S,200,228.40,2024-11-21,10:05:00,1.50',
+    'TSLA,B,80,345.00,2024-12-05,10:00:00,1.20',
+    'TSLA,S,80,358.50,2024-12-06,14:30:00,1.20',
+  ];
+  return lines.join('\n');
+}
+
+// ============================================================
+// Wire up UI
+// ============================================================
+document.getElementById('file').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => ingestCSV(r.result);
+  r.readAsText(f);
+});
+
+document.getElementById('demoBtn').addEventListener('click', () => {
+  ingestCSV(demoCSV());
+});
+
+document.getElementById('fxMode').addEventListener('change', e => {
+  const m = e.target.value;
+  document.getElementById('fxFixedWrap').classList.toggle('hidden', m !== 'fixed');
+  document.getElementById('fxCsvWrap').classList.toggle('hidden', m !== 'csv');
+  if (m === 'fixed') { state.fxRates = null; recompute(); }
+});
+
+document.getElementById('fxRate').addEventListener('input', recompute);
+
+document.getElementById('fxCsv').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const map = {};
+    r.result.split(/\r?\n/).forEach(line => {
+      const [d, rate] = line.split(',');
+      if (d && rate && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) {
+        map[d.trim()] = parseFloat(rate);
+      }
+    });
+    state.fxRates = map;
+    recompute();
+  };
+  r.readAsText(f);
+});
+
+['aggMode', 'includeFees', 'roundMode', 'taxYear', 'persnr', 'name'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById('hdrYear').textContent = document.getElementById('taxYear').value;
+    recompute();
+  });
+});
+
+document.getElementById('dlInfo').addEventListener('click', () => {
+  const persnr = document.getElementById('persnr').value.trim();
+  const name = document.getElementById('name').value.trim();
+  if (!persnr || !name) { alert('Fill in personnummer and name first.'); return; }
+  downloadFile('INFO.SRU', buildInfo(persnr, name));
+});
+
+document.getElementById('dlBlank').addEventListener('click', () => {
+  const persnr = document.getElementById('persnr').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const year = document.getElementById('taxYear').value;
+  if (!persnr || !name) { alert('Fill in personnummer and name first.'); return; }
+  if (!state.k4rows.length) { alert('No closed trades to export.'); return; }
+  downloadFile('BLANKETTER.SRU', buildBlanketter(state.k4rows, persnr, name, year));
+});
+
+document.getElementById('dlBoth').addEventListener('click', () => {
+  document.getElementById('dlInfo').click();
+  setTimeout(() => document.getElementById('dlBlank').click(), 250);
+});
+</script>
+</body>
+</html>
