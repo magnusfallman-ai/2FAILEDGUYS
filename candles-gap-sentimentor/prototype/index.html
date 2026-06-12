@@ -75,20 +75,27 @@
   var $ = function (id) { return document.getElementById(id); };
   var state = { data: null, sortKey: null, sortDir: -1, filter: "" };
 
-  // value formatting by column id
-  function fmtVal(key, v) {
+  // value formatting driven by each column's "fmt" hint
+  function fmtVal(col, v) {
     if (v === null || v === undefined || v === "") return "—";
-    if (typeof v !== "number") return String(v);
-    if (key === "change" || key === "gap") {
-      return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + (v >= 0 ? "+" : "") + v.toFixed(2) + "%</span>";
+    var fmt = col.fmt || "text";
+    if (fmt !== "text" && typeof v !== "number") return String(v);
+    switch (fmt) {
+      case "pct":
+        return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + (v >= 0 ? "+" : "") + v.toFixed(2) + "%</span>";
+      case "price":
+        return v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      case "vol":
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+        if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
+        return v.toLocaleString("en-US");
+      case "money":
+        if (v >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
+        if (v >= 1e6) return "$" + (v / 1e6).toFixed(1) + "M";
+        return "$" + v.toLocaleString("en-US");
+      default:
+        return String(v);
     }
-    if (key === "volume") return v.toLocaleString("en-US");
-    if (key === "market_cap_basic") {
-      if (v >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
-      if (v >= 1e6) return "$" + (v / 1e6).toFixed(1) + "M";
-      return "$" + v.toLocaleString("en-US");
-    }
-    return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
   }
 
   function render() {
@@ -129,7 +136,7 @@
     var body = $("body"); body.innerHTML = "";
     rows.forEach(function (r) {
       var tr = document.createElement("tr");
-      tr.innerHTML = d.columns.map(function (c) { return "<td>" + fmtVal(c.left, r[c.left]) + "</td>"; }).join("");
+      tr.innerHTML = d.columns.map(function (c) { return "<td>" + fmtVal(c, r[c.left]) + "</td>"; }).join("");
       body.appendChild(tr);
     });
     $("empty").classList.toggle("hidden", rows.length > 0);
@@ -142,8 +149,9 @@
     .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(function (d) {
       state.data = d;
-      // default sort: first numeric-looking column after symbol, else none
-      state.sortKey = (d.columns.find(function (c) { return c.left === "gap"; }) || {}).left || null;
+      // default sort: pre-market change desc, else first numeric column
+      state.sortKey = (d.columns.find(function (c) { return c.left === "premarket_change"; }) ||
+                       d.columns.find(function (c) { return c.fmt && c.fmt !== "text"; }) || {}).left || null;
       render();
     })
     .catch(function (err) {
