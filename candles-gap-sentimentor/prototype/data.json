@@ -1,0 +1,21 @@
+{
+  "updated": "2026-06-12T20:05:00+00:00",
+  "source": "TradingView screener (america) — SAMPLE DATA",
+  "total_count": 3,
+  "columns": [
+    { "left": "name",             "label": "Symbol" },
+    { "left": "description",      "label": "Name" },
+    { "left": "close",            "label": "Price" },
+    { "left": "change",           "label": "Change %" },
+    { "left": "volume",           "label": "Volume" },
+    { "left": "relative_volume_10d_calc", "label": "Rel Vol" },
+    { "left": "gap",              "label": "Gap %" },
+    { "left": "market_cap_basic", "label": "Mkt Cap" },
+    { "left": "sector",           "label": "Sector" }
+  ],
+  "rows": [
+    { "_ticker": "NASDAQ:DEMO", "name": "DEMO", "description": "Demo Industries", "close": 42.18, "change": 6.83, "volume": 18450000, "relative_volume_10d_calc": 4.2, "gap": 5.1, "market_cap_basic": 2900000000, "sector": "Technology" },
+    { "_ticker": "NYSE:SAMP", "name": "SAMP", "description": "Sample Corp", "close": 13.07, "change": -3.42, "volume": 9220000, "relative_volume_10d_calc": 2.7, "gap": -2.8, "market_cap_basic": 740000000, "sector": "Health" },
+    { "_ticker": "NASDAQ:MOCK", "name": "MOCK", "description": "Mockingbird Labs", "close": 88.55, "change": 1.12, "volume": 5310000, "relative_volume_10d_calc": 1.4, "gap": 0.9, "market_cap_basic": 12500000000, "sector": "Consumer" }
+  ]
+}
