@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Candles Gap Sentimentor</title>
-<meta name="description" content="Candles Gap Sentimentor — gap detection & sentiment scoring for candlestick data. Coming soon." />
+<meta name="description" content="Candles Gap Sentimentor — detect opening gaps in candlestick data and score bullish/bearish sentiment. Runs entirely in your browser." />
 <style>
   :root {
     --bg: #0f1117;
@@ -23,67 +23,80 @@
   html, body {
     margin: 0; padding: 0; min-height: 100%;
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(110,168,255,0.12), transparent 60%),
-      radial-gradient(900px 500px at 0% 110%, rgba(77,212,164,0.10), transparent 55%),
+      radial-gradient(1200px 600px at 80% -10%, rgba(110,168,255,0.10), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(77,212,164,0.08), transparent 55%),
       var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  body { display: flex; flex-direction: column; min-height: 100vh; }
   header {
-    padding: 22px 32px; border-bottom: 1px solid var(--border);
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 12px;
   }
-  .logo {
-    display: inline-flex; align-items: flex-end; gap: 3px; height: 26px;
-  }
+  .logo { display: inline-flex; align-items: flex-end; gap: 3px; height: 24px; }
   .logo span { width: 5px; border-radius: 2px; display: inline-block; }
-  .logo .c1 { height: 14px; background: var(--good); }
-  .logo .c2 { height: 24px; background: var(--accent); }
-  .logo .c3 { height: 10px; background: var(--bad); }
-  .logo .c4 { height: 20px; background: var(--accent-2); }
+  .logo .c1 { height: 13px; background: var(--good); }
+  .logo .c2 { height: 22px; background: var(--accent); }
+  .logo .c3 { height: 9px;  background: var(--bad); }
+  .logo .c4 { height: 18px; background: var(--accent-2); }
   header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0.3px; }
-  header .tag {
-    margin-left: 8px; font-size: 11px; color: var(--warn);
-    border: 1px solid var(--warn); border-radius: 999px; padding: 2px 10px;
-    text-transform: uppercase; letter-spacing: 0.6px;
+  header .sub { color: var(--muted); font-size: 12px; margin-left: auto; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 32px 64px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; margin-bottom: 20px;
   }
-  main {
-    flex: 1; max-width: 880px; margin: 0 auto; padding: 64px 32px;
-    display: flex; flex-direction: column; align-items: center; text-align: center;
+  section h2 {
+    margin: 0 0 14px; font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--accent);
   }
-  .hero h2 {
-    font-size: clamp(32px, 6vw, 52px); margin: 0 0 16px; line-height: 1.05;
-    background: linear-gradient(90deg, var(--text), var(--accent));
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input[type="file"], select {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: 6px; font-size: 14px; width: 100%;
   }
-  .hero p { font-size: 17px; color: var(--muted); max-width: 600px; margin: 0 auto 36px; line-height: 1.6; }
-  .cards { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); width: 100%; margin-top: 8px; }
-  .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 22px 20px; text-align: left;
+  input[type="file"] { padding: 6px; }
+  button {
+    background: var(--accent); color: #0a0d14; border: 0; padding: 10px 18px;
+    border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
   }
-  .card .ico { font-size: 22px; margin-bottom: 10px; }
-  .card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--accent); }
-  .card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
-  .status {
-    margin-top: 44px; display: inline-flex; align-items: center; gap: 10px;
-    background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px;
-    padding: 10px 18px; font-size: 14px; color: var(--text);
-  }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 0 rgba(255,180,84,0.6); animation: pulse 2s infinite; }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255,180,84,0.5); }
-    70% { box-shadow: 0 0 0 10px rgba(255,180,84,0); }
-    100% { box-shadow: 0 0 0 0 rgba(255,180,84,0); }
-  }
-  footer {
-    padding: 20px 32px; border-top: 1px solid var(--border);
-    color: var(--muted); font-size: 12px; text-align: center;
-  }
+  button:hover { background: #8ab8ff; }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button.secondary:hover { background: #262c3d; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .row > div { flex: 1; min-width: 160px; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  .error { color: var(--bad); font-size: 13px; margin-top: 10px; }
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(4, 1fr); }
+  .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px; padding: 14px 16px; }
+  .stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+  .stat .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .stat .v.small { font-size: 16px; }
+  .gauge-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .gauge { flex: 0 0 auto; }
+  .gauge-label { font-size: 15px; }
+  .gauge-label .big { font-size: 26px; font-weight: 700; display: block; }
+  .chart-box { width: 100%; position: relative; }
+  canvas { width: 100%; display: block; border-radius: 8px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+  .table-scroll { max-height: 460px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); text-align: right; font-weight: 600; z-index: 1; }
+  th:first-child, td:first-child { text-align: left; }
+  tr:hover td { background: rgba(110,168,255,0.05); }
+  .pill { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pos { color: var(--good); }
+  .neg { color: var(--bad); }
+  .mut { color: var(--muted); }
+  .hidden { display: none; }
+  footer { padding: 20px 32px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; text-align: center; }
   footer a { color: var(--accent); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+  details p, details li { color: var(--muted); font-size: 13px; line-height: 1.6; }
+  @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, 1fr); } main { padding: 20px 16px 48px; } header { padding: 16px; } }
 </style>
 </head>
 <body>
@@ -92,45 +105,596 @@
       <span class="c1"></span><span class="c2"></span><span class="c3"></span><span class="c4"></span>
     </span>
     <h1>Candles Gap Sentimentor</h1>
-    <span class="tag">Coming soon</span>
+    <span class="sub">Runs in your browser · no data leaves your machine</span>
   </header>
 
   <main>
-    <div class="hero">
-      <h2>Read the gaps.<br />Feel the sentiment.</h2>
-      <p>
-        A browser-based tool for spotting opening gaps in candlestick data and
-        scoring the bullish / bearish mood behind them — built for traders who
-        live in the pre-market.
-      </p>
-    </div>
+    <!-- DATA INPUT -->
+    <section>
+      <h2>1 · Load candle data</h2>
+      <div class="row">
+        <div>
+          <label for="file">OHLC CSV file</label>
+          <input type="file" id="file" accept=".csv,.txt,text/csv" />
+        </div>
+        <div style="flex:0 0 auto;">
+          <button class="secondary" id="demoBtn" type="button">Load demo data</button>
+        </div>
+      </div>
+      <div id="mapping" class="hidden" style="margin-top:16px;">
+        <div class="row">
+          <div><label>Date</label><select id="mapDate"></select></div>
+          <div><label>Open</label><select id="mapOpen"></select></div>
+          <div><label>High</label><select id="mapHigh"></select></div>
+          <div><label>Low</label><select id="mapLow"></select></div>
+          <div><label>Close</label><select id="mapClose"></select></div>
+        </div>
+        <div class="controls">
+          <button id="analyzeBtn" type="button">Analyze gaps &amp; sentiment</button>
+        </div>
+      </div>
+      <div id="loadErr" class="error hidden"></div>
+      <div class="hint">
+        Expected columns (auto-detected): <strong>Date</strong>, <strong>Open</strong>, <strong>High</strong>,
+        <strong>Low</strong>, <strong>Close</strong> (Volume optional). Comma, semicolon or tab delimited.
+        Rows should be in chronological order — oldest first works best (the tool sorts by date anyway).
+      </div>
+    </section>
 
-    <div class="cards">
-      <div class="card">
-        <div class="ico">📈</div>
-        <h3>Gap detection</h3>
-        <p>Find overnight and opening gaps, classify up / down, and measure size as a % of prior close.</p>
-      </div>
-      <div class="card">
-        <div class="ico">🧭</div>
-        <h3>Sentiment scoring</h3>
-        <p>Turn raw candles into a simple bullish/bearish read you can scan at a glance.</p>
-      </div>
-      <div class="card">
-        <div class="ico">🔒</div>
-        <h3>Runs in your browser</h3>
-        <p>Your data stays on your machine. Nothing gets uploaded anywhere.</p>
-      </div>
-    </div>
+    <!-- RESULTS -->
+    <div id="results" class="hidden">
+      <!-- SUMMARY -->
+      <section>
+        <h2>2 · Overall reading</h2>
+        <div class="gauge-wrap">
+          <canvas id="gauge" class="gauge" width="220" height="130" style="width:220px;height:130px;"></canvas>
+          <div class="gauge-label">
+            <span id="overallLabel" class="big">—</span>
+            <span id="overallScore" class="mut">average sentiment score</span>
+          </div>
+        </div>
+        <div class="cards" style="margin-top:18px;">
+          <div class="stat"><div class="k">Candles analyzed</div><div class="v" id="stCount">—</div></div>
+          <div class="stat"><div class="k">Gap ups</div><div class="v pos" id="stUp">—</div></div>
+          <div class="stat"><div class="k">Gap downs</div><div class="v neg" id="stDown">—</div></div>
+          <div class="stat"><div class="k">Gap fill rate</div><div class="v" id="stFill">—</div></div>
+          <div class="stat"><div class="k">Avg gap (abs)</div><div class="v small" id="stAvgGap">—</div></div>
+          <div class="stat"><div class="k">Biggest gap up</div><div class="v small pos" id="stMaxUp">—</div></div>
+          <div class="stat"><div class="k">Biggest gap down</div><div class="v small neg" id="stMaxDown">—</div></div>
+          <div class="stat"><div class="k">Bullish days</div><div class="v small" id="stBull">—</div></div>
+        </div>
+      </section>
 
-    <div class="status">
-      <span class="dot" aria-hidden="true"></span>
-      Under construction — check back soon.
+      <!-- CANDLE CHART -->
+      <section>
+        <h2>3 · Candlestick chart (gaps shaded)</h2>
+        <div class="chart-box"><canvas id="candleChart" height="380"></canvas></div>
+        <div class="legend">
+          <span><i style="background:var(--good)"></i>Bullish candle (close ≥ open)</span>
+          <span><i style="background:var(--bad)"></i>Bearish candle (close &lt; open)</span>
+          <span><i style="background:rgba(110,168,255,0.35)"></i>Gap up zone</span>
+          <span><i style="background:rgba(255,107,107,0.30)"></i>Gap down zone</span>
+        </div>
+      </section>
+
+      <!-- SENTIMENT CHART -->
+      <section>
+        <h2>4 · Daily sentiment score (−100 … +100)</h2>
+        <div class="chart-box"><canvas id="sentChart" height="240"></canvas></div>
+        <div class="hint">Each bar is that day's sentiment, combining gap direction &amp; size, candle body, where it closed in the day's range, and whether the gap held or filled.</div>
+      </section>
+
+      <!-- TABLE -->
+      <section>
+        <h2>5 · Per-day detail</h2>
+        <div class="table-scroll">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>Date</th><th>Prev close</th><th>Open</th><th>Gap %</th>
+                <th>Direction</th><th>Filled?</th><th>Candle</th><th>Close loc.</th>
+                <th>Score</th><th>Sentiment</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="controls">
+          <button class="secondary" id="csvBtn" type="button">Download results CSV</button>
+        </div>
+      </section>
+
+      <section>
+        <details>
+          <summary>How the sentiment score is calculated</summary>
+          <p>For every day that has a prior day, four components are computed (each from −1 to +1) and blended into a score from −100 (max bearish) to +100 (max bullish):</p>
+          <ul>
+            <li><strong>Gap direction &amp; size (30%)</strong> — opening gap vs the prior close; a 2% gap counts as full strength.</li>
+            <li><strong>Candle body (25%)</strong> — green (close &gt; open) is bullish, red is bearish, scaled by body size within the day's range.</li>
+            <li><strong>Close location (25%)</strong> — closing near the high is bullish, near the low is bearish.</li>
+            <li><strong>Gap integrity (20%)</strong> — a gap up that <em>holds</em> (doesn't trade back to prior close) is bullish; one that <em>fills</em> shows weakness. A gap down that fills/recovers is bullish.</li>
+          </ul>
+          <p>Labels: ≥ 50 Strongly Bullish · ≥ 20 Bullish · −20…20 Neutral · ≤ −20 Bearish · ≤ −50 Strongly Bearish. This is a descriptive indicator, not financial advice.</p>
+        </details>
+      </section>
     </div>
   </main>
 
   <footer>
-    Candles Gap Sentimentor · part of <a href="../">2 Failed Guys</a> · built for educational use, not financial advice.
+    Candles Gap Sentimentor · everything runs locally in your browser · built for educational use, not financial advice.
   </footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- helpers ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var clamp = function (x, lo, hi) { return Math.max(lo, Math.min(hi, x)); };
+  var fmt = function (n, d) { return (n === null || n === undefined || isNaN(n)) ? "—" : n.toFixed(d === undefined ? 2 : d); };
+  var pct = function (n, d) { return (n >= 0 ? "+" : "") + fmt(n, d === undefined ? 2 : d) + "%"; };
+
+  var state = { rows: null, headers: null, analysis: null };
+
+  // ---------- CSV parsing ----------
+  function detectDelimiter(text) {
+    var line = text.split(/\r?\n/)[0] || "";
+    var counts = { ",": (line.match(/,/g) || []).length,
+                   ";": (line.match(/;/g) || []).length,
+                   "\t": (line.match(/\t/g) || []).length };
+    var best = ",", bestN = -1;
+    for (var d in counts) { if (counts[d] > bestN) { bestN = counts[d]; best = d; } }
+    return best;
+  }
+
+  function parseCSV(text) {
+    var delim = detectDelimiter(text);
+    var lines = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+    if (!lines.length) return { headers: [], rows: [] };
+    var splitLine = function (l) {
+      // simple split with basic quote handling
+      var out = [], cur = "", q = false;
+      for (var i = 0; i < l.length; i++) {
+        var ch = l[i];
+        if (ch === '"') { q = !q; }
+        else if (ch === delim && !q) { out.push(cur); cur = ""; }
+        else { cur += ch; }
+      }
+      out.push(cur);
+      return out.map(function (s) { return s.trim().replace(/^"|"$/g, ""); });
+    };
+    var headers = splitLine(lines[0]);
+    var rows = [];
+    for (var i = 1; i < lines.length; i++) rows.push(splitLine(lines[i]));
+    return { headers: headers, rows: rows };
+  }
+
+  function guessColumn(headers, names) {
+    var lower = headers.map(function (h) { return h.toLowerCase(); });
+    for (var n = 0; n < names.length; n++) {
+      for (var i = 0; i < lower.length; i++) {
+        if (lower[i] === names[n]) return i;
+      }
+    }
+    // contains match
+    for (var n2 = 0; n2 < names.length; n2++) {
+      for (var i2 = 0; i2 < lower.length; i2++) {
+        if (lower[i2].indexOf(names[n2]) !== -1) return i2;
+      }
+    }
+    return -1;
+  }
+
+  function fillSelect(sel, headers, chosen) {
+    sel.innerHTML = "";
+    headers.forEach(function (h, i) {
+      var o = document.createElement("option");
+      o.value = i; o.textContent = h || ("col " + i);
+      sel.appendChild(o);
+    });
+    if (chosen >= 0) sel.value = chosen;
+  }
+
+  function showMapping(headers) {
+    fillSelect($("mapDate"), headers, guessColumn(headers, ["date", "time", "datetime", "timestamp"]));
+    fillSelect($("mapOpen"), headers, guessColumn(headers, ["open", "o"]));
+    fillSelect($("mapHigh"), headers, guessColumn(headers, ["high", "h"]));
+    fillSelect($("mapLow"), headers, guessColumn(headers, ["low", "l"]));
+    fillSelect($("mapClose"), headers, guessColumn(headers, ["close", "adj close", "c", "last"]));
+    $("mapping").classList.remove("hidden");
+  }
+
+  function num(v) {
+    if (v === undefined || v === null) return NaN;
+    var s = String(v).replace(/\s/g, "").replace(/,/g, "");
+    return parseFloat(s);
+  }
+
+  // ---------- analysis ----------
+  function analyze() {
+    var di = +$("mapDate").value, oi = +$("mapOpen").value, hi = +$("mapHigh").value,
+        li = +$("mapLow").value, ci = +$("mapClose").value;
+    var recs = [];
+    state.rows.forEach(function (r) {
+      var o = num(r[oi]), h = num(r[hi]), l = num(r[li]), c = num(r[ci]);
+      var dRaw = r[di];
+      if (isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) return;
+      var t = Date.parse(dRaw);
+      recs.push({ dateRaw: dRaw, t: isNaN(t) ? null : t, o: o, h: h, l: l, c: c });
+    });
+    if (recs.length < 2) { return { error: "Need at least 2 valid rows of OHLC data." }; }
+    // sort chronologically if dates parse
+    if (recs.every(function (r) { return r.t !== null; })) {
+      recs.sort(function (a, b) { return a.t - b.t; });
+    }
+
+    var days = [];
+    var GAP_THRESH = 0.1; // % to count as a real gap
+    for (var i = 1; i < recs.length; i++) {
+      var p = recs[i - 1], cur = recs[i];
+      var prevClose = p.c;
+      var gapPct = (cur.o - prevClose) / prevClose * 100;
+      var dir = gapPct > GAP_THRESH ? "up" : (gapPct < -GAP_THRESH ? "down" : "flat");
+      var range = Math.max(cur.h - cur.l, 1e-9);
+
+      // gap fill: did price trade back through prior close intraday?
+      var filled = null;
+      if (dir === "up") filled = cur.l <= prevClose;
+      else if (dir === "down") filled = cur.h >= prevClose;
+
+      // ----- sentiment components, each -1..1 -----
+      var cGap = clamp(gapPct / 2, -1, 1);
+      var cBody = clamp((cur.c - cur.o) / range, -1, 1);
+      var cLoc = clamp(2 * ((cur.c - cur.l) / range) - 1, -1, 1);
+      var cInt = 0;
+      if (dir === "up") cInt = filled ? -1 : 1;
+      else if (dir === "down") cInt = filled ? 1 : -1;
+
+      var score = (0.30 * cGap + 0.25 * cBody + 0.25 * cLoc + 0.20 * cInt) * 100;
+      score = clamp(score, -100, 100);
+
+      days.push({
+        dateRaw: cur.dateRaw, t: cur.t, o: cur.o, h: cur.h, l: cur.l, c: cur.c,
+        prevClose: prevClose, gapPct: gapPct, dir: dir, filled: filled,
+        body: cur.c >= cur.o ? "up" : "down",
+        closeLoc: (cur.c - cur.l) / range, score: score, label: labelFor(score)
+      });
+    }
+
+    // summary
+    var ups = days.filter(function (d) { return d.dir === "up"; });
+    var downs = days.filter(function (d) { return d.dir === "down"; });
+    var gapped = ups.concat(downs);
+    var fills = gapped.filter(function (d) { return d.filled; }).length;
+    var avgGap = gapped.length ? gapped.reduce(function (s, d) { return s + Math.abs(d.gapPct); }, 0) / gapped.length : 0;
+    var maxUp = ups.reduce(function (m, d) { return Math.max(m, d.gapPct); }, 0);
+    var maxDown = downs.reduce(function (m, d) { return Math.min(m, d.gapPct); }, 0);
+    var avgScore = days.reduce(function (s, d) { return s + d.score; }, 0) / days.length;
+    var bull = days.filter(function (d) { return d.score >= 20; }).length;
+
+    return {
+      recs: recs, days: days,
+      summary: {
+        count: days.length, ups: ups.length, downs: downs.length,
+        fillRate: gapped.length ? fills / gapped.length * 100 : null,
+        avgGap: avgGap, maxUp: maxUp, maxDown: maxDown,
+        avgScore: avgScore, label: labelFor(avgScore), bull: bull
+      }
+    };
+  }
+
+  function labelFor(s) {
+    if (s >= 50) return "Strongly Bullish";
+    if (s >= 20) return "Bullish";
+    if (s <= -50) return "Strongly Bearish";
+    if (s <= -20) return "Bearish";
+    return "Neutral";
+  }
+  function colorFor(s) {
+    if (s >= 20) return "#4dd4a4";
+    if (s <= -20) return "#ff6b6b";
+    return "#8b93a7";
+  }
+
+  // ---------- rendering ----------
+  function render(a) {
+    state.analysis = a;
+    $("results").classList.remove("hidden");
+    var s = a.summary;
+    $("stCount").textContent = s.count;
+    $("stUp").textContent = s.ups;
+    $("stDown").textContent = s.downs;
+    $("stFill").textContent = s.fillRate === null ? "—" : fmt(s.fillRate, 0) + "%";
+    $("stAvgGap").textContent = fmt(s.avgGap, 2) + "%";
+    $("stMaxUp").textContent = s.ups ? pct(s.maxUp) : "—";
+    $("stMaxDown").textContent = s.downs ? pct(s.maxDown) : "—";
+    $("stBull").textContent = s.bull + " / " + s.count;
+    $("overallLabel").textContent = s.label;
+    $("overallLabel").style.color = colorFor(s.avgScore);
+    $("overallScore").textContent = "avg score " + (s.avgScore >= 0 ? "+" : "") + fmt(s.avgScore, 1);
+
+    drawGauge(s.avgScore);
+    drawCandles(a);
+    drawSentiment(a.days);
+    fillTable(a.days);
+  }
+
+  function setupCanvas(cv, cssH) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth || cv.parentNode.clientWidth;
+    var h = cssH || cv.clientHeight;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    cv.style.height = h + "px";
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function drawGauge(score) {
+    var cv = $("gauge");
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = 220 * dpr; cv.height = 130 * dpr;
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var cx = 110, cy = 115, r = 92;
+    ctx.clearRect(0, 0, 220, 130);
+    // arc segments
+    var segs = [["#ff6b6b", Math.PI, Math.PI * 1.25],
+                ["#ffb454", Math.PI * 1.25, Math.PI * 1.5],
+                ["#8b93a7", Math.PI * 1.5, Math.PI * 1.5],
+                ["#4dd4a4", Math.PI * 1.5, Math.PI * 2]];
+    ctx.lineWidth = 16; ctx.lineCap = "butt";
+    // simpler 3-zone arc: red | grey | green across PI..2PI
+    var zones = [["#ff6b6b", 0, 0.4], ["#8b93a7", 0.4, 0.6], ["#4dd4a4", 0.6, 1]];
+    zones.forEach(function (z) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI + Math.PI * z[1], Math.PI + Math.PI * z[2]);
+      ctx.strokeStyle = z[0]; ctx.stroke();
+    });
+    // needle
+    var frac = clamp((score + 100) / 200, 0, 1);
+    var ang = Math.PI + Math.PI * frac;
+    ctx.strokeStyle = "#e6e9ef"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ang) * (r - 6), cy + Math.sin(ang) * (r - 6)); ctx.stroke();
+    ctx.fillStyle = "#e6e9ef"; ctx.beginPath(); ctx.arc(cx, cy, 5, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = "#8b93a7"; ctx.font = "11px -apple-system, sans-serif";
+    ctx.textAlign = "left"; ctx.fillText("−100", 8, 128);
+    ctx.textAlign = "right"; ctx.fillText("+100", 212, 128);
+  }
+
+  function drawCandles(a) {
+    var cv = $("candleChart");
+    var dim = setupCanvas(cv, 380);
+    var ctx = dim.ctx, W = dim.w, H = dim.h;
+    ctx.clearRect(0, 0, W, H);
+    var recs = a.recs;
+    var maxBars = 120;
+    var data = recs.slice(Math.max(0, recs.length - maxBars));
+    var gapByT = {};
+    a.days.forEach(function (d) { gapByT[d.dateRaw] = d; });
+
+    var padL = 56, padR = 12, padT = 12, padB = 28;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var lo = Infinity, hi = -Infinity;
+    data.forEach(function (r) { lo = Math.min(lo, r.l); hi = Math.max(hi, r.h); });
+    var pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
+    var y = function (v) { return padT + plotH - (v - lo) / (hi - lo) * plotH; };
+    var n = data.length;
+    var slot = plotW / n;
+    var bw = Math.max(1.5, Math.min(slot * 0.6, 14));
+
+    // grid + axis labels
+    ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.fillStyle = "#8b93a7";
+    ctx.font = "11px -apple-system, sans-serif"; ctx.textAlign = "right"; ctx.lineWidth = 1;
+    for (var g = 0; g <= 4; g++) {
+      var val = lo + (hi - lo) * g / 4;
+      var yy = y(val);
+      ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(W - padR, yy); ctx.stroke();
+      ctx.fillText(val.toFixed(2), padL - 6, yy + 3);
+    }
+
+    // gap zones (shaded rectangle between prevClose and open)
+    for (var i = 0; i < data.length; i++) {
+      var r = data[i];
+      var d = gapByT[r.dateRaw];
+      if (!d || d.dir === "flat") continue;
+      var cx = padL + slot * i + slot / 2;
+      var y1 = y(d.prevClose), y2 = y(r.o);
+      ctx.fillStyle = d.dir === "up" ? "rgba(110,168,255,0.30)" : "rgba(255,107,107,0.28)";
+      ctx.fillRect(cx - slot / 2, Math.min(y1, y2), slot, Math.abs(y2 - y1));
+    }
+
+    // candles
+    for (var j = 0; j < data.length; j++) {
+      var c = data[j];
+      var cx2 = padL + slot * j + slot / 2;
+      var up = c.c >= c.o;
+      var col = up ? "#4dd4a4" : "#ff6b6b";
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
+      // wick
+      ctx.beginPath(); ctx.moveTo(cx2, y(c.h)); ctx.lineTo(cx2, y(c.l)); ctx.stroke();
+      // body
+      var yo = y(c.o), yc = y(c.c);
+      var top = Math.min(yo, yc), bh = Math.max(1, Math.abs(yc - yo));
+      ctx.fillRect(cx2 - bw / 2, top, bw, bh);
+    }
+
+    // x labels (first / mid / last date)
+    ctx.fillStyle = "#8b93a7"; ctx.textAlign = "center";
+    var idxs = [0, Math.floor(n / 2), n - 1];
+    idxs.forEach(function (ix) {
+      if (!data[ix]) return;
+      var lbl = String(data[ix].dateRaw).slice(0, 10);
+      ctx.fillText(lbl, padL + slot * ix + slot / 2, H - 8);
+    });
+  }
+
+  function drawSentiment(days) {
+    var cv = $("sentChart");
+    var dim = setupCanvas(cv, 240);
+    var ctx = dim.ctx, W = dim.w, H = dim.h;
+    ctx.clearRect(0, 0, W, H);
+    var maxBars = 120;
+    var data = days.slice(Math.max(0, days.length - maxBars));
+    var padL = 40, padR = 12, padT = 10, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var mid = padT + plotH / 2;
+    var y = function (v) { return mid - (v / 100) * (plotH / 2); };
+
+    // zero line + guides
+    ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.fillStyle = "#8b93a7";
+    ctx.font = "11px -apple-system, sans-serif"; ctx.textAlign = "right"; ctx.lineWidth = 1;
+    [-100, -50, 0, 50, 100].forEach(function (v) {
+      var yy = y(v);
+      ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(W - padR, yy);
+      ctx.strokeStyle = v === 0 ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)";
+      ctx.stroke();
+      ctx.fillText((v > 0 ? "+" : "") + v, padL - 6, yy + 3);
+    });
+
+    var n = data.length, slot = plotW / n, bw = Math.max(1.5, Math.min(slot * 0.7, 16));
+    for (var i = 0; i < data.length; i++) {
+      var d = data[i];
+      var cx = padL + slot * i + slot / 2;
+      var yv = y(d.score);
+      ctx.fillStyle = colorFor(d.score);
+      var top = Math.min(mid, yv), bh = Math.max(1, Math.abs(yv - mid));
+      ctx.fillRect(cx - bw / 2, top, bw, bh);
+    }
+  }
+
+  function fillTable(days) {
+    var tb = $("tbl").querySelector("tbody");
+    tb.innerHTML = "";
+    // newest first
+    var rows = days.slice().reverse();
+    rows.forEach(function (d) {
+      var tr = document.createElement("tr");
+      var dirTxt = d.dir === "up" ? '<span class="pos">▲ up</span>'
+                 : d.dir === "down" ? '<span class="neg">▼ down</span>'
+                 : '<span class="mut">flat</span>';
+      var fillTxt = d.filled === null ? '<span class="mut">—</span>'
+                  : d.filled ? "yes" : '<span class="mut">no</span>';
+      var bodyTxt = d.body === "up" ? '<span class="pos">green</span>' : '<span class="neg">red</span>';
+      var scoreCol = colorFor(d.score);
+      tr.innerHTML =
+        '<td>' + String(d.dateRaw).slice(0, 10) + '</td>' +
+        '<td>' + fmt(d.prevClose) + '</td>' +
+        '<td>' + fmt(d.o) + '</td>' +
+        '<td class="' + (d.gapPct >= 0 ? "pos" : "neg") + '">' + pct(d.gapPct) + '</td>' +
+        '<td>' + dirTxt + '</td>' +
+        '<td>' + fillTxt + '</td>' +
+        '<td>' + bodyTxt + '</td>' +
+        '<td>' + fmt(d.closeLoc * 100, 0) + '%</td>' +
+        '<td style="color:' + scoreCol + ';font-weight:600">' + (d.score >= 0 ? "+" : "") + fmt(d.score, 0) + '</td>' +
+        '<td style="color:' + scoreCol + '">' + d.label + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function downloadCSV(days) {
+    var head = ["date", "prev_close", "open", "high", "low", "close", "gap_pct", "direction", "filled", "candle", "close_location_pct", "score", "sentiment"];
+    var lines = [head.join(",")];
+    days.forEach(function (d) {
+      lines.push([
+        String(d.dateRaw).slice(0, 19),
+        fmt(d.prevClose), fmt(d.o), fmt(d.h), fmt(d.l), fmt(d.c),
+        fmt(d.gapPct), d.dir, d.filled === null ? "" : (d.filled ? "yes" : "no"),
+        d.body === "up" ? "green" : "red",
+        fmt(d.closeLoc * 100, 0), fmt(d.score, 1), '"' + d.label + '"'
+      ].join(","));
+    });
+    var blob = new Blob([lines.join("\r\n")], { type: "text/csv" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "gap_sentiment_results.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- demo data ----------
+  function demoData() {
+    // deterministic pseudo-random OHLC with occasional gaps
+    var seed = 42;
+    var rnd = function () { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    var rows = [["Date", "Open", "High", "Low", "Close", "Volume"]];
+    var price = 100, day = new Date(Date.UTC(2025, 0, 2));
+    for (var i = 0; i < 90; i++) {
+      // skip weekends
+      var dow = day.getUTCDay();
+      if (dow === 0 || dow === 6) { day = new Date(day.getTime() + 86400000); i--; continue; }
+      var drift = (rnd() - 0.48) * 2.2;
+      var gap = 0;
+      if (rnd() > 0.6) gap = (rnd() - 0.5) * price * 0.035; // ~40% of days gap
+      var open = price + gap;
+      var close = open + drift;
+      var high = Math.max(open, close) + rnd() * 1.4;
+      var low = Math.min(open, close) - rnd() * 1.4;
+      rows.push([
+        day.toISOString().slice(0, 10),
+        open.toFixed(2), high.toFixed(2), low.toFixed(2), close.toFixed(2),
+        Math.round(800000 + rnd() * 1200000)
+      ]);
+      price = close;
+      day = new Date(day.getTime() + 86400000);
+    }
+    return rows.map(function (r) { return r.join(","); }).join("\n");
+  }
+
+  // ---------- events ----------
+  function loadText(text) {
+    $("loadErr").classList.add("hidden");
+    var parsed = parseCSV(text);
+    if (parsed.headers.length < 4) {
+      $("loadErr").textContent = "Couldn't find enough columns. Make sure the file has Open/High/Low/Close.";
+      $("loadErr").classList.remove("hidden");
+      return;
+    }
+    state.headers = parsed.headers; state.rows = parsed.rows;
+    showMapping(parsed.headers);
+  }
+
+  $("file").addEventListener("change", function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { loadText(String(reader.result)); };
+    reader.readAsText(f);
+  });
+
+  $("demoBtn").addEventListener("click", function () {
+    loadText(demoData());
+    // auto-run after mapping
+    setTimeout(function () { $("analyzeBtn").click(); }, 0);
+  });
+
+  $("analyzeBtn").addEventListener("click", function () {
+    var a = analyze();
+    if (a.error) {
+      $("loadErr").textContent = a.error; $("loadErr").classList.remove("hidden");
+      return;
+    }
+    $("loadErr").classList.add("hidden");
+    render(a);
+    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  $("csvBtn").addEventListener("click", function () {
+    if (state.analysis) downloadCSV(state.analysis.days);
+  });
+
+  // redraw charts on resize
+  var rT;
+  window.addEventListener("resize", function () {
+    if (!state.analysis) return;
+    clearTimeout(rT);
+    rT = setTimeout(function () {
+      drawGauge(state.analysis.summary.avgScore);
+      drawCandles(state.analysis);
+      drawSentiment(state.analysis.days);
+    }, 150);
+  });
+})();
+</script>
 </body>
 </html>
